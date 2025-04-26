@@ -131,7 +131,7 @@ def generate_vector_image(prompt):
         )
     except Exception as e:
         st.error(f"Error calling API: {e}")
-        return None
+        return None, {"error": f"Error calling API: {e}"}
 
     if resp and len(resp.data) > 0 and resp.data[0].url:
         image_url = resp.data[0].url
@@ -141,16 +141,18 @@ def generate_vector_image(prompt):
                 content_type = image_resp.headers.get("Content-Type", "")
                 if "svg" in content_type.lower():
                     # 使用集中的SVG处理函数
-                    return convert_svg_to_png(image_resp.content)
+                    image = convert_svg_to_png(image_resp.content)
+                    return image, {"prompt": prompt, "image_url": image_url}
                 else:
-                    return Image.open(BytesIO(image_resp.content)).convert("RGBA")
+                    image = Image.open(BytesIO(image_resp.content)).convert("RGBA")
+                    return image, {"prompt": prompt, "image_url": image_url}
             else:
                 st.error(f"Failed to download image, status code: {image_resp.status_code}")
         except Exception as download_err:
             st.error(f"Error requesting image: {download_err}")
     else:
         st.error("Could not get image URL from API response.")
-    return None
+    return None, {"error": "Failed to generate or download image"}
 
 def change_shirt_color(image, color_hex, apply_texture=False, fabric_type=None):
     """Change T-shirt color with optional fabric texture"""
@@ -571,7 +573,7 @@ def show_low_recommendation_without_explanation():
                 st.session_state.user_prompt = prompt
                 
                 # 获取设计建议
-                design_suggestions = get_ai_design_suggestions(prompt, st.session_state.keyword_style)
+                design_suggestions = get_ai_design_suggestions(prompt)
                 
                 # 生成设计
                 generated_designs = []
