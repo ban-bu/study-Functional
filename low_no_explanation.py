@@ -393,7 +393,7 @@ def generate_complete_design(design_prompt, variation_id=None):
             
             # 修改Logo提示词，确保生成的Logo有白色背景，没有透明部分
             logo_prompt = f"Create a Logo design for printing: {logo_desc}. Requirements: 1. Simple professional design 2. NO TRANSPARENCY background (NO TRANSPARENCY) 3. Clear and distinct graphic 4. Good contrast with colors that will show well on fabric"
-            logo_image = generate_vector_image(logo_prompt)
+            logo_image, _ = generate_vector_image(logo_prompt)
         
         # 最终设计 - 不添加文字
         final_design = colored_shirt
@@ -577,16 +577,20 @@ def show_low_recommendation_without_explanation():
                 
                 # 生成设计
                 generated_designs = []
-                for i, suggestion in enumerate(design_suggestions[:3]):  # 限制为前3个建议
-                    design_img, design_info = generate_vector_image(
-                        suggestion["design_description"],
-                        st.session_state.original_tshirt
-                    )
-                    generated_designs.append({
-                        "image": design_img,
-                        "info": design_info,
-                        "suggestion": suggestion
-                    })
+                # 修改为直接处理单个设计建议字典，而不是循环处理列表
+                if "error" not in design_suggestions:
+                    # 构建设计描述
+                    design_description = f"T-shirt design with {design_suggestions.get('color', {}).get('name', 'custom color')} color, {design_suggestions.get('fabric', 'cotton')} fabric, featuring {design_suggestions.get('logo', 'a simple logo')}"
+                    
+                    # 生成图像
+                    design_img, design_info = generate_vector_image(design_description)
+                    
+                    if design_img:
+                        generated_designs.append({
+                            "image": design_img,
+                            "info": design_info,
+                            "suggestion": design_suggestions
+                        })
                 
                 st.session_state.generated_designs = generated_designs
                 if generated_designs:
